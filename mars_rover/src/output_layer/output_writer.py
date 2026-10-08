@@ -13,6 +13,7 @@ class ConsoleOutputWriter(OutputWriter):
         "S": "v",
         "W": "<"
     }
+    
     def write(self, data: OutputData):
         for row_idx in range(data.plateau_size.height, 0, -1):
             print("+---" * data.plateau_size.width + "+")
