@@ -17,6 +17,8 @@ class Rover:
             self._turn_left()
         elif instruction == RoverInstruction.TURN_RIGHT:
             self._turn_right()
+        else:
+            raise ValueError(f"Invalid instruction: {instruction}")
             
     def _move(self):
         if self.direction == CompassDirection.NORTH:
@@ -27,6 +29,8 @@ class Rover:
             self.position.y -= 1
         elif self.direction == CompassDirection.WEST:
             self.position.x -= 1
+        else:
+            raise ValueError(f"Invalid direction: {self.direction}")
             
     def _turn_left(self):
         if self.direction == CompassDirection.NORTH:
@@ -37,7 +41,9 @@ class Rover:
             self.direction = CompassDirection.EAST
         elif self.direction == CompassDirection.EAST:
             self.direction = CompassDirection.NORTH
-            
+        else:
+            raise ValueError(f"Invalid direction: {self.direction}")
+
     def _turn_right(self):
         if self.direction == CompassDirection.NORTH:
             self.direction = CompassDirection.EAST
@@ -47,6 +53,8 @@ class Rover:
             self.direction = CompassDirection.WEST
         elif self.direction == CompassDirection.WEST:
             self.direction = CompassDirection.NORTH
+        else:
+            raise ValueError(f"Invalid direction: {self.direction}")
 
     def __repr__(self):
         return f"Rover(position={self.position}, direction={self.direction})"
