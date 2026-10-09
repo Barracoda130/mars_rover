@@ -13,8 +13,8 @@ from mars_rover.src.common.enums import ProgramState
 
 class LayerCoordinator:
     def __init__(self, input_file_path: str):
-        self._input_layer = FileInputParser(input_file_path)
-        # self._input_layer = PygameInputParser()
+        # self._input_layer = FileInputParser(input_file_path)
+        self._input_layer = ConsoleInputParser()
         self._plateau = Plateau()
         # self._output_layer = PygameOutputWriter()
         self._output_layer = ConsoleOutputWriter()

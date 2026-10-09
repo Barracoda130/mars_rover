@@ -82,9 +82,6 @@ class InputParser(ABC):
 
 
 class ConsoleInputParser(InputParser):
-    def __init__(self):
-        pass
-    
     @override
     def get_plateau_size(self) -> PlateauSize:
         while True:
@@ -97,14 +94,15 @@ class ConsoleInputParser(InputParser):
     
     @override
     def get_next_rover_start(self) -> RoverData|None:
-        data = input("Enter rover start position (X Y D) or 'done' to finish: ")
-        if data.lower() == 'done':
-            return None
-        
-        try:
-            return self._parse_rover_start(data)
-        except InvalidRoverInputException as e:
-            print(f"{e}. Please try again.")
+        while True:
+            data = input("Enter rover start position (X Y D) or 'done' to finish: ")
+            if data.lower() == 'done':
+                return None
+            
+            try:
+                return self._parse_rover_start(data)
+            except InvalidRoverInputException as e:
+                print(f"{e}. Please try again.")
             
     @override
     def get_next_rover_instruction(self) -> RoverInstruction|None:
