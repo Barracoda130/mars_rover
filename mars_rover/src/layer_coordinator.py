@@ -26,7 +26,5 @@ class LayerCoordinator:
                     self._plateau.move_rover(instruction)
                     # self._output_layer.write(self._plateau.to_output_data())
                 
-                self._plateau.save_rover()
-
             self._output_layer.write(self._plateau.to_output_data())
             

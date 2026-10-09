@@ -10,3 +10,8 @@ class RoverData:
                  direction: CompassDirection):
         self.position = position
         self.direction = direction
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, RoverData):
+            return NotImplemented
+        return self.position == other.position and self.direction == other.direction

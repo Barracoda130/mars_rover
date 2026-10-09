@@ -98,14 +98,6 @@ class FileInputParser(InputParser):
             raise InvalidInputException("File not opened. Use 'with' statement to open the file.")
 
         return self._file
-
-    @override
-    def get_plateau_size(self) -> PlateauSize:
-        file = self.ensure_file_open()
-        
-        line = file.readline().strip()
-
-        return self._parse_plateau_size(line)
     
     def _get_next_rover_instruction(self) -> RoverInstruction|None:
         file = self.ensure_file_open()
@@ -125,6 +117,14 @@ class FileInputParser(InputParser):
         
         return self._parse_rover_start(line)
 
+
+    @override
+    def get_plateau_size(self) -> PlateauSize:
+        file = self.ensure_file_open()
+        
+        line = file.readline().strip()
+
+        return self._parse_plateau_size(line)
     @override
     def get_rover_instructions(self) -> Generator[RoverInstruction, None, None]:
         while instruction := self._get_next_rover_instruction():
