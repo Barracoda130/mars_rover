@@ -1,11 +1,12 @@
 
 
-from enum import Enum
+from enum import Enum, auto
 
 class RoverInstruction(Enum):
     MOVE_FORWARD = "M"
     TURN_LEFT = "L"
     TURN_RIGHT = "R"
+    STAY = "."
     
     
 class CompassDirection(Enum):
@@ -14,4 +15,10 @@ class CompassDirection(Enum):
     SOUTH = "S"
     WEST = "W"
     
-    
+class ProgramState(Enum):
+    INITIALIZING = auto()
+    GET_PLATEAU_SIZE = auto()
+    GET_ROVER_START = auto()
+    GET_ROVER_INSTRUCTION = auto()
+    ERROR = auto()
+    EXIT = auto() 

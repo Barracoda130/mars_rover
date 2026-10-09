@@ -22,11 +22,11 @@ class InputParser(ABC):
         ...
 
     @abstractmethod
-    def get_rovers_starts(self) -> Generator[RoverData, None, None]:
+    def get_next_rover_start(self) -> RoverData|None:
         ...
         
     @abstractmethod
-    def get_rover_instructions(self) -> Generator[RoverInstruction, None, None]:
+    def get_next_rover_instruction(self) -> RoverInstruction|None:
         ...
 
     def setup(self) -> None:
@@ -96,26 +96,25 @@ class ConsoleInputParser(InputParser):
             
     
     @override
-    def get_rovers_starts(self) -> Generator[RoverData, None, None]:
-        while True:
-            data = input("Enter rover start position (X Y D) or 'done' to finish: ")
-            if data.lower() == 'done':
-                break
-            
-            try:
-                yield self._parse_rover_start(data)
-            except InvalidRoverInputException as e:
-                print(f"{e}. Please try again.")
+    def get_next_rover_start(self) -> RoverData|None:
+        data = input("Enter rover start position (X Y D) or 'done' to finish: ")
+        if data.lower() == 'done':
+            return None
+        
+        try:
+            return self._parse_rover_start(data)
+        except InvalidRoverInputException as e:
+            print(f"{e}. Please try again.")
             
     @override
-    def get_rover_instructions(self) -> Generator[RoverInstruction, None, None]:
+    def get_next_rover_instruction(self) -> RoverInstruction|None:
         while True:
             data = input("Enter rover instruction (M, L, R) or 'done' to finish: ")
             if data.lower() == 'done':
-                break
+                return None
             
             try:
-                yield self._parse_rover_instruction(data)
+                return self._parse_rover_instruction(data)
             except InvalidMovementInputException as e:
                 print(f"{e}. Please try again.")
   
@@ -182,13 +181,12 @@ class FileInputParser(InputParser):
         line = file.readline().strip()
 
         return self._parse_plateau_size(line)
+    
     @override
-    def get_rover_instructions(self) -> Generator[RoverInstruction, None, None]:
-        while instruction := self._get_next_rover_instruction():
-            yield instruction
+    def get_next_rover_instruction(self) -> RoverInstruction|None:
+        return self._get_next_rover_instruction()
     
     @override     
-    def get_rovers_starts(self) -> Generator[RoverData, None, None]:
-        while start := self._get_next_rover_start():
-            yield start
+    def get_next_rover_start(self) -> RoverData|None:
+        return self._get_next_rover_start()
         

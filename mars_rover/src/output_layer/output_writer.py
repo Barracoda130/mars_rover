@@ -1,10 +1,21 @@
 
 
+from abc import ABC, abstractmethod
+
+from mars_rover.src.common.enums import ProgramState
 from mars_rover.src.output_layer.output_data import OutputData
 
 
-class OutputWriter:
-    pass
+class OutputWriter(ABC):
+    @abstractmethod
+    def write(self, data: OutputData, program_state: ProgramState):
+        ...
+        
+    def setup(self) -> None:
+        pass
+    
+    def cleanup(self) -> None:
+        pass
 
 class ConsoleOutputWriter(OutputWriter):
     DIRECTION_TO_SYMBOL = {
@@ -14,7 +25,7 @@ class ConsoleOutputWriter(OutputWriter):
         "W": "<"
     }
     
-    def write(self, data: OutputData):
+    def write(self, data: OutputData, program_state: ProgramState):
         for row_idx in range(data.plateau_size.height, 0, -1):
             print("+---" * data.plateau_size.width + "+")
             row = ""
