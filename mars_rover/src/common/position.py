@@ -12,3 +12,6 @@ class Position:
 
     def __str__(self) -> str:
         return f"({self.x}, {self.y})"
+
+    def copy(self) -> Position:
+        return Position(self.x, self.y)

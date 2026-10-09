@@ -1,6 +1,7 @@
 
 
 from mars_rover.src.common.enums import CompassDirection, RoverInstruction
+from mars_rover.src.common.exceptions import RoverLeftPlateauException
 from mars_rover.src.common.position import Position
 from mars_rover.src.common.rover_data import RoverData
 from mars_rover.src.logic_layer.plateau import Plateau
@@ -29,15 +30,40 @@ def test_add_rover():
     assert plateau._current_rover.position == Position(1, 2)
     assert plateau._current_rover.direction == CompassDirection.NORTH
 
+def test_is_within_bounds():
+    plateau = Plateau()
+    plateau.set_dimensions(PlateauSize(5, 5))
+    
+    assert plateau._is_within_bounds(Position(1, 1)) is True
+    assert plateau._is_within_bounds(Position(5, 5)) is True
+    assert plateau._is_within_bounds(Position(0, 0)) is False
+    assert plateau._is_within_bounds(Position(6, 6)) is False
+    assert plateau._is_within_bounds(Position(3, 6)) is False
+    assert plateau._is_within_bounds(Position(6, 3)) is False
+    assert plateau._is_within_bounds(Position(3, 3)) is True
+
 def test_move_rover():
     plateau = Plateau()
+    plateau.set_dimensions(PlateauSize(5, 5))
     plateau.add_rover(RoverData(Position(1, 2), CompassDirection.NORTH))
     plateau.move_rover(RoverInstruction.MOVE_FORWARD)
     assert plateau._current_rover is not None
     assert plateau._current_rover.position == Position(1, 3)
     assert plateau._current_rover.direction == CompassDirection.NORTH
 
-def test_to_outpu_data():
+def test_move_rover_out_of_bounds():
+    plateau = Plateau()
+    plateau.set_dimensions(PlateauSize(5, 5))
+    plateau.add_rover(RoverData(Position(1, 5), CompassDirection.NORTH))
+    
+    with pytest.raises(RoverLeftPlateauException) as exc_info:
+        plateau.move_rover(RoverInstruction.MOVE_FORWARD)
+    
+    assert plateau._current_rover is not None
+    assert plateau._current_rover.position == Position(1, 5)
+    assert plateau._current_rover.direction == CompassDirection.NORTH
+
+def test_to_output_data():
     plateau = Plateau()
     plateau.set_dimensions(PlateauSize(5, 5))
     plateau.add_rover(RoverData(Position(1, 2), CompassDirection.NORTH))

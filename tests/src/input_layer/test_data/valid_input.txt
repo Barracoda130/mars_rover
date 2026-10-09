@@ -1,5 +1,5 @@
 5 5
 1 2 N
-LMRM
+RMLM
 3 3 E
-MRMML
+MLMMR
