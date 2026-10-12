@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from io import TextIOWrapper
 from typing import Generator, override
 from mars_rover.src.common.exceptions import RoverLeftPlateauException
+from mars_rover.src.common.instruction import InputInstruction, InstructionType
 from mars_rover.src.common.position import Position
 from mars_rover.src.common.size import PlateauSize
 from mars_rover.src.common.enums import CompassDirection, RoverInstruction
@@ -18,15 +19,7 @@ from mars_rover.src.common.rover_data import RoverData
 
 class InputParser(ABC):
     @abstractmethod
-    def get_plateau_size(self) -> PlateauSize:
-        ...
-
-    @abstractmethod
-    def get_next_rover_start(self) -> RoverData|None:
-        ...
-        
-    @abstractmethod
-    def get_next_rover_instruction(self) -> RoverInstruction|None:
+    def get_next_instruction(self, expected_instruction_type: InstructionType) -> InputInstruction:
         ...
 
     def setup(self) -> None:
@@ -40,7 +33,7 @@ class InputParser(ABC):
 
 
     @staticmethod
-    def _parse_plateau_size(data: str) -> PlateauSize:
+    def _parse_plateau_size(data: str) -> InputInstruction:
         dimensions = data.split()
         if len(dimensions) != 2:
             raise InvalidPlateauInputException(f"Invalid size: expected 'X Y', received '{data}'")
@@ -50,10 +43,10 @@ class InputParser(ABC):
             y = int(dimensions[1])
         except ValueError:
             raise InvalidPlateauInputException(f"Invalid size: expected integers, received '{data}'")
-        return PlateauSize(x, y)
+        return InputInstruction(InstructionType.PLATEAU_SIZE, PlateauSize(x, y))
     
     @staticmethod
-    def _parse_rover_start(data: str) -> RoverData:
+    def _parse_rover_start(data: str) -> InputInstruction:
         parts = data.split()
         if len(parts) != 3:
             raise InvalidRoverInputException(f"Invalid start position: expected 'X Y D', received '{data}'")
@@ -70,20 +63,19 @@ class InputParser(ABC):
         except ValueError:
             raise InvalidRoverInputException(f"Invalid start position: expected a valid direction (N, E, S, W), received '{direction_str}'")
         
-        return RoverData(Position(x, y), direction)
+        return InputInstruction(InstructionType.ROVER_START, RoverData(Position(x, y), direction))
 
     @staticmethod
-    def _parse_rover_instruction(data: str) -> RoverInstruction:
+    def _parse_rover_instruction(data: str) -> InputInstruction:
         try:
-            return RoverInstruction(data.upper())
+            return InputInstruction(InstructionType.ROVER_INSTRUCTION, RoverInstruction(data.upper()))
 
         except ValueError:
             raise InvalidMovementInputException(f"Invalid movement instruction: expected 'M', 'L', or 'R', received '{data}'")
 
 
 class ConsoleInputParser(InputParser):
-    @override
-    def get_plateau_size(self) -> PlateauSize:
+    def _get_plateau_size(self) -> InputInstruction:
         while True:
             data = input("Enter plateau size (X Y): ")
             try:
@@ -92,24 +84,22 @@ class ConsoleInputParser(InputParser):
                 print(f"{e}. Please try again.")
             
     
-    @override
-    def get_next_rover_start(self) -> RoverData|None:
+    def _get_next_rover_start(self) -> InputInstruction:
         while True:
             data = input("Enter rover start position (X Y D) or 'done' to finish: ")
             if data.lower() == 'done':
-                return None
+                return InputInstruction(InstructionType.QUIT, None)
             
             try:
                 return self._parse_rover_start(data)
             except InvalidRoverInputException as e:
                 print(f"{e}. Please try again.")
             
-    @override
-    def get_next_rover_instruction(self) -> RoverInstruction|None:
+    def _get_next_rover_instruction(self) -> InputInstruction:
         while True:
             data = input("Enter rover instruction (M, L, R) or 'done' to finish: ")
             if data.lower() == 'done':
-                return None
+                return InputInstruction(InstructionType.NEXT_ROVER, None)
             
             try:
                 return self._parse_rover_instruction(data)
@@ -122,7 +112,18 @@ class ConsoleInputParser(InputParser):
             print(f"Logic error occurred: {exception}. Please try again.")
         else:
             raise exception
-
+      
+    @override  
+    def get_next_instruction(self, expected_instruction_type: InstructionType) -> InputInstruction:
+        match expected_instruction_type:
+            case InstructionType.PLATEAU_SIZE:
+                return self._get_plateau_size()
+            case InstructionType.ROVER_START:
+                return self._get_next_rover_start()
+            case InstructionType.ROVER_INSTRUCTION:
+                return self._get_next_rover_instruction()
+            case _:
+                raise ValueError(f"Unexpected instruction type: {expected_instruction_type}")
 
 class FileInputParser(InputParser):
     def __init__(self, file_path: str):
@@ -143,24 +144,30 @@ class FileInputParser(InputParser):
 
         return self._file
     
-    def _get_next_rover_instruction(self) -> RoverInstruction|None:
+    def _get_next_rover_instruction(self) -> InputInstruction:
         file = self.ensure_file_open()
 
         character = file.read(1)
         if character in ['', '\n']:
-            return None
+            return InputInstruction(InstructionType.NEXT_ROVER, None)
         
         return self._parse_rover_instruction(character)
     
-    def _get_next_rover_start(self) -> RoverData|None:
+    def _get_next_rover_start(self) -> InputInstruction:
         file = self.ensure_file_open()
         
         line = file.readline().strip()
         if not line:
-            return None
+            return InputInstruction(InstructionType.QUIT, None)
         
         return self._parse_rover_start(line)
 
+    def _get_plateau_size(self) -> InputInstruction:
+        file = self.ensure_file_open()
+        
+        line = file.readline().strip()
+
+        return self._parse_plateau_size(line)
 
     @override
     def setup(self) -> None:
@@ -172,19 +179,18 @@ class FileInputParser(InputParser):
             self._file.close()
         self._file = None
 
+    
     @override
-    def get_plateau_size(self) -> PlateauSize:
-        file = self.ensure_file_open()
+    def get_next_instruction(self, expected_instruction_type: InstructionType) -> InputInstruction:
+        match expected_instruction_type:
+            case InstructionType.PLATEAU_SIZE:
+                return self._get_plateau_size()
+            case InstructionType.ROVER_START:
+                return self._get_next_rover_start()
+            case InstructionType.ROVER_INSTRUCTION:
+                return self._get_next_rover_instruction()
+            case _:
+                raise ValueError(f"Unexpected instruction type: {expected_instruction_type}")
+            
         
-        line = file.readline().strip()
-
-        return self._parse_plateau_size(line)
-    
-    @override
-    def get_next_rover_instruction(self) -> RoverInstruction|None:
-        return self._get_next_rover_instruction()
-    
-    @override     
-    def get_next_rover_start(self) -> RoverData|None:
-        return self._get_next_rover_start()
         

@@ -1,5 +1,6 @@
 
 from mars_rover.src.common.exceptions import ProgramEndException
+from mars_rover.src.common.instruction import InputInstruction, InstructionType
 from mars_rover.src.common.position import Position
 from mars_rover.src.common.rover_data import RoverData
 from mars_rover.src.common.size import PlateauSize
@@ -11,15 +12,12 @@ import pygame
 
 class PygameInputParser(InputParser):
     
-    @override
     def get_plateau_size(self) -> PlateauSize:
         return PlateauSize(20, 20)  # Placeholder value, implement logic to get plateau size from Pygame input
 
-    @override
     def get_next_rover_start(self) -> RoverData|None:
         return RoverData(position=Position(1, 2), direction=CompassDirection.NORTH)  # Placeholder value, implement logic to get rover starts from Pygame input
 
-    @override 
     def get_next_rover_instruction(self) -> RoverInstruction|None:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -39,9 +37,37 @@ class PygameInputParser(InputParser):
                     return None  # Signal move onto next rover
 
         return RoverInstruction.STAY 
+    
+    def _rover_movement_instruction(self, event_type: int) -> InputInstruction:
+        match event_type:
+            case pygame.K_w:
+                return InputInstruction(InstructionType.ROVER_INSTRUCTION, RoverInstruction.MOVE_FORWARD)
+            case pygame.K_a:
+                return InputInstruction(InstructionType.ROVER_INSTRUCTION, RoverInstruction.TURN_LEFT)
+            case pygame.K_d:
+                return InputInstruction(InstructionType.ROVER_INSTRUCTION, RoverInstruction.TURN_RIGHT)
+            case pygame.K_q:
+                return InputInstruction(InstructionType.NEXT_ROVER, None)
+            case _:
+                return InputInstruction(InstructionType.ROVER_INSTRUCTION, RoverInstruction.STAY)
 
     @override
     def logic_error_raised(self, exception: Exception) -> None:
         pass
+
+    @override
+    def get_next_instruction(self, expected_instruction_type: InstructionType) -> InputInstruction:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return InputInstruction(InstructionType.QUIT, None)
+            elif event.type == pygame.KEYDOWN:
+                return self._rover_movement_instruction(event.key)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1: # Left click
+                    pygame.mouse.get_pos()
+                    # callback()
+                    pass
+            
+        return InputInstruction(InstructionType.ROVER_INSTRUCTION, self.get_next_rover_instruction())
                     
     

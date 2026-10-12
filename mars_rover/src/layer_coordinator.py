@@ -9,11 +9,12 @@ from mars_rover.src.output_layer.output_writer import ConsoleOutputWriter
 from mars_rover.src.output_layer.pygame_output_writer import PygameOutputWriter
 from mars_rover.src.common.enums import ProgramState
 from mars_rover.src.common.exceptions import ProgramEndException
+from mars_rover.src.common.instruction import InputInstruction, InstructionType
 
 class LayerCoordinator:
     def __init__(self, input_file_path: str):
         # self._input_layer = FileInputParser(input_file_path)
-        self._input_layer = PygameInputParser()
+        self._input_layer = ConsoleInputParser()
         self._plateau = Plateau()
         self._output_layer = PygameOutputWriter()
         # self._output_layer = ConsoleOutputWriter()
@@ -57,6 +58,29 @@ class LayerCoordinator:
             self._input_layer.logic_error_raised(e)
             
         return ProgramState.GET_ROVER_INSTRUCTION
+    
+    def _get_next_instruction(self, expected_instruction_type: InstructionType) -> ProgramState:
+        instruction = self._input_layer.get_next_instruction(expected_instruction_type)
+        try:
+            match instruction.type:
+                case InstructionType.PLATEAU_SIZE:
+                    self._plateau.set_dimensions(instruction.data)
+                    return ProgramState.GET_ROVER_START
+                case InstructionType.ROVER_START:
+                    self._plateau.add_rover(instruction.data)
+                    return ProgramState.GET_ROVER_INSTRUCTION
+                case InstructionType.ROVER_INSTRUCTION:
+                    self._plateau.move_rover(instruction.data)
+                    return ProgramState.GET_ROVER_INSTRUCTION
+                case InstructionType.NEXT_ROVER:
+                    return ProgramState.GET_ROVER_START
+                case InstructionType.QUIT:
+                    return ProgramState.EXIT
+                case _:
+                    raise ValueError(f"Unexpected instruction type: {instruction.type}")
+        except Exception as e:
+            self._input_layer.logic_error_raised(e)
+            return self._state  # Stay in the current state to retry the instruction
 
 
     def _run(self):
@@ -65,11 +89,11 @@ class LayerCoordinator:
                 case ProgramState.INITIALIZING:
                     self._state = self._setup()
                 case ProgramState.GET_PLATEAU_SIZE:
-                    self._state = self._get_plateau_size()
+                    self._state = self._get_next_instruction(InstructionType.PLATEAU_SIZE)
                 case ProgramState.GET_ROVER_START:
-                    self._state = self._get_rover_start()
+                    self._state = self._get_next_instruction(InstructionType.ROVER_START)
                 case ProgramState.GET_ROVER_INSTRUCTION:
-                    self._state = self._get_rover_instruction()
+                    self._state = self._get_next_instruction(InstructionType.ROVER_INSTRUCTION)
                 case ProgramState.ERROR:
                     break
                 case ProgramState.EXIT:

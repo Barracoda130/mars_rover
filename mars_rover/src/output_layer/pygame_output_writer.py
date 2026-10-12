@@ -1,11 +1,20 @@
 
 
+from mars_rover.src.common.button_data import ButtonData, ButtonType
 from mars_rover.src.common.enums import CompassDirection
 from mars_rover.src.common.size import PlateauSize
+from mars_rover.src.output_layer.button import Button, TextInput
 from mars_rover.src.output_layer.output_data import OutputData
 from mars_rover.src.output_layer.output_writer import OutputWriter
 from mars_rover.src.common.exceptions import MarsRoverException
 import pygame
+
+def ensure_pygame_initialized(func):
+    def wrapper(self, *args, **kwargs):
+        if not pygame.get_init() or self._canvas is None:
+            raise MarsRoverException("Pygame must be initialized before calling this method.")
+        return func(self, *args, **kwargs)
+    return wrapper
 
 class PygameOutputWriter(OutputWriter):
     _ROVER_ROTATION_ANGLES = {
@@ -15,24 +24,89 @@ class PygameOutputWriter(OutputWriter):
         CompassDirection.WEST: 90
     }
     
+    _SCREEN_WIDTH = 800
+    _SCREEN_HEIGHT = 600
+    
+    _CREATE_PLATEAU_BUTTON = Button(x=int(_SCREEN_WIDTH/2 - 110), 
+                                    y=int(_SCREEN_HEIGHT/2 + 55), 
+                                    width=220, 
+                                    height=50, 
+                                    label="Create Plateau")
     def __init__(self):
         self._previous_output_data = OutputData(plateau_size=PlateauSize(0, 0), rovers=[])
         self._canvas = None
+        self._plateau_size_input = TextInput(
+            int(self._SCREEN_WIDTH / 2 - 110),
+            int(self._SCREEN_HEIGHT / 2 - 30),
+            220,
+            50,
+        )
+        self._plateau_size_error = ""
         
     def setup(self) -> None:
         pygame.init()
-        self._canvas = pygame.display.set_mode((800, 600))
+        self._canvas = pygame.display.set_mode((self._SCREEN_WIDTH, self._SCREEN_HEIGHT))
         pygame.display.set_caption("Mars Rover Simulation")
+        
+    def _create_plateau_button_clicked(self, click_position: tuple[int, int]) -> ButtonData:
+        if self._CREATE_PLATEAU_BUTTON.is_clicked(click_position):
+            dimensions = self._plateau_size_input.text.split()
+            if len(dimensions) != 2:
+                self._plateau_size_error = "Enter width and height, for example: 5 5"
+                return ButtonData(ButtonType.NONE, None)
 
+            try:
+                width, height = (int(dimension) for dimension in dimensions)
+            except ValueError:
+                self._plateau_size_error = "Width and height must be whole numbers"
+                return ButtonData(ButtonType.NONE, None)
+
+            if width <= 0 or height <= 0:
+                self._plateau_size_error = "Width and height must be greater than zero"
+                return ButtonData(ButtonType.NONE, None)
+
+            self._plateau_size_error = ""
+            return ButtonData(ButtonType.PLATEAU_SIZE, PlateauSize(width, height))
+
+        return ButtonData(ButtonType.NONE, None)
+
+    def handle_event(self, event: pygame.event.Event) -> None:
+        self._plateau_size_input.handle_event(event)
     
+    def _plateau_grid_clicked(self, click_position: tuple[int, int]) -> ButtonData:
+        # Implement logic to determine if a grid cell was clicked and return the appropriate ButtonData
+        # For now, just return NONE
+        return ButtonData(ButtonType.NONE, None)
+
+    def button_click_callback(self, click_position: tuple[int, int]) -> ButtonData:
+        if self._previous_output_data.plateau_size.width <= 0 or self._previous_output_data.plateau_size.height <= 0:
+            return self._create_plateau_button_clicked(click_position)
+        
+        return self._plateau_grid_clicked(click_position)
     
+    @ensure_pygame_initialized
+    def _write_create_plateau_screen(self) -> None:
+        self._canvas.fill("white")
+        font = pygame.font.Font(None, 32)
+        label = font.render("Plateau size (width height):", True, "black")
+        label_rect = label.get_rect(centerx=self._SCREEN_WIDTH // 2, bottom=self._plateau_size_input.rect.top - 10)
+        self._canvas.blit(label, label_rect)
+        self._plateau_size_input.draw(self._canvas)
+        self._CREATE_PLATEAU_BUTTON.draw(self._canvas)
+        if self._plateau_size_error:
+            error_font = pygame.font.Font(None, 24)
+            error = error_font.render(self._plateau_size_error, True, "red")
+            error_rect = error.get_rect(centerx=self._SCREEN_WIDTH // 2, top=self._CREATE_PLATEAU_BUTTON.y + 65)
+            self._canvas.blit(error, error_rect)
+        pygame.display.update()
+    
+    @ensure_pygame_initialized
     def write(self, data: OutputData):
-        if self._canvas is None:
-            raise MarsRoverException("Must call setup before write")
-
+        
         self._canvas.fill("white")
         
         if data.plateau_size.width <= 0 or data.plateau_size.height <= 0:
+            self._write_create_plateau_screen()
             return
         
         top_start = 50
