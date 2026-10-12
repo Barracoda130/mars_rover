@@ -5,7 +5,7 @@ from mars_rover.src.common.size import PlateauSize
 from mars_rover.src.common.enums import CompassDirection, RoverInstruction
 from mars_rover.src.input_layer.input_parser import InputParser
 
-from typing import Generator, override
+from typing import override
 import pygame
 
 class PygameInputParser(InputParser):
@@ -29,7 +29,6 @@ class PygameInputParser(InputParser):
                 elif event.key == pygame.K_d:
                     return RoverInstruction.TURN_RIGHT
 
-        print("stay")
         return RoverInstruction.STAY 
                     
     

@@ -16,8 +16,8 @@ class LayerCoordinator:
         # self._input_layer = FileInputParser(input_file_path)
         self._input_layer = ConsoleInputParser()
         self._plateau = Plateau()
-        # self._output_layer = PygameOutputWriter()
-        self._output_layer = ConsoleOutputWriter()
+        self._output_layer = PygameOutputWriter()
+        # self._output_layer = ConsoleOutputWriter()
 
         self._state = ProgramState.INITIALIZING
 
@@ -76,9 +76,9 @@ class LayerCoordinator:
                 case ProgramState.EXIT:
                     break
                 
-            self._output_layer.write(self._plateau.to_output_data(), self._state)
+            self._output_layer.write(self._plateau.to_output_data())
             
-        self._output_layer.write(self._plateau.to_output_data(), self._state)
+        self._output_layer.write(self._plateau.to_output_data())
 
     def run(self):
         try:

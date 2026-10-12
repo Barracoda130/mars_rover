@@ -2,13 +2,12 @@
 
 from abc import ABC, abstractmethod
 
-from mars_rover.src.common.enums import ProgramState
 from mars_rover.src.output_layer.output_data import OutputData
 
 
 class OutputWriter(ABC):
     @abstractmethod
-    def write(self, data: OutputData, program_state: ProgramState):
+    def write(self, data: OutputData):
         ...
         
     def setup(self) -> None:
@@ -25,7 +24,7 @@ class ConsoleOutputWriter(OutputWriter):
         "W": "<"
     }
     
-    def write(self, data: OutputData, program_state: ProgramState):
+    def write(self, data: OutputData):
         for row_idx in range(data.plateau_size.height, 0, -1):
             print("+---" * data.plateau_size.width + "+")
             row = ""
