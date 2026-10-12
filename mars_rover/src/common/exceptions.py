@@ -15,3 +15,7 @@ class RoverLeftPlateauException(MarsRoverException):
         self.position = position
         self.plateau_size = plateau_size
         super().__init__(f"Invalid move: Rover at position {position} is outside the plateau size {plateau_size}")
+
+class ProgramEndException(MarsRoverException):
+    """Exception raised to signal the end of the program."""
+    pass

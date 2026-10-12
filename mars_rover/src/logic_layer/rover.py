@@ -18,6 +18,8 @@ class Rover:
                 self._turn_left()
             case RoverInstruction.TURN_RIGHT:
                 self._turn_right()
+            case RoverInstruction.STAY:
+                pass
             case _:
                 raise ValueError(f"Invalid instruction: {instruction}")
             

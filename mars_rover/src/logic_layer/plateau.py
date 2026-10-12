@@ -42,6 +42,10 @@ class Plateau:
             invalid_location = self._current_rover.position
             self._current_rover.position = rover_old_position
             raise RoverLeftPlateauException(self._size, invalid_location)
+
+        if any(rover.position == self._current_rover.position for rover in self._rovers[:-1]):
+            self._current_rover.position = rover_old_position
+            raise Exception(f"Rover collision detected at position {self._current_rover.position}.")
         
     def __repr__(self):
         return f"Plateau(size={self._size}, rovers={self._rovers})"

@@ -1,4 +1,5 @@
 
+from mars_rover.src.common.exceptions import ProgramEndException
 from mars_rover.src.common.position import Position
 from mars_rover.src.common.rover_data import RoverData
 from mars_rover.src.common.size import PlateauSize
@@ -12,7 +13,7 @@ class PygameInputParser(InputParser):
     
     @override
     def get_plateau_size(self) -> PlateauSize:
-        return PlateauSize(5, 5)  # Placeholder value, implement logic to get plateau size from Pygame input
+        return PlateauSize(20, 20)  # Placeholder value, implement logic to get plateau size from Pygame input
 
     @override
     def get_next_rover_start(self) -> RoverData|None:
@@ -21,14 +22,26 @@ class PygameInputParser(InputParser):
     @override 
     def get_next_rover_instruction(self) -> RoverInstruction|None:
         for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
+            if event.type == pygame.QUIT:
+                raise ProgramEndException("User requested exit.")
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1: # Left click
+                    # callback()
+                    pass
+            elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_w:
                     return RoverInstruction.MOVE_FORWARD
                 elif event.key == pygame.K_a:
                     return RoverInstruction.TURN_LEFT
                 elif event.key == pygame.K_d:
                     return RoverInstruction.TURN_RIGHT
+                elif event.key == pygame.K_q:
+                    return None  # Signal move onto next rover
 
         return RoverInstruction.STAY 
+
+    @override
+    def logic_error_raised(self, exception: Exception) -> None:
+        pass
                     
     

@@ -1,8 +1,6 @@
 
 from enum import Enum
 
-from mars_rover.src.common.enums import RoverInstruction
-from mars_rover.src.input_layer.exceptions import EndOfInstructionsException
 from mars_rover.src.input_layer.input_parser import FileInputParser, ConsoleInputParser
 from mars_rover.src.input_layer.pygame_input_parser import PygameInputParser
 from mars_rover.src.logic_layer.plateau import Plateau
@@ -10,11 +8,12 @@ from mars_rover.src.output_layer.output_data import OutputData
 from mars_rover.src.output_layer.output_writer import ConsoleOutputWriter
 from mars_rover.src.output_layer.pygame_output_writer import PygameOutputWriter
 from mars_rover.src.common.enums import ProgramState
+from mars_rover.src.common.exceptions import ProgramEndException
 
 class LayerCoordinator:
     def __init__(self, input_file_path: str):
         # self._input_layer = FileInputParser(input_file_path)
-        self._input_layer = ConsoleInputParser()
+        self._input_layer = PygameInputParser()
         self._plateau = Plateau()
         self._output_layer = PygameOutputWriter()
         # self._output_layer = ConsoleOutputWriter()
@@ -83,6 +82,10 @@ class LayerCoordinator:
     def run(self):
         try:
             self._run()
+
+        except ProgramEndException:
+            pass
+        
         finally:
             self._cleanup()
 
