@@ -14,7 +14,7 @@ from mars_rover.src.common.instruction import InputInstruction, InstructionType
 class LayerCoordinator:
     def __init__(self, input_file_path: str):
         # self._input_layer = FileInputParser(input_file_path)
-        self._input_layer = ConsoleInputParser()
+        self._input_layer = PygameInputParser()
         self._plateau = Plateau()
         self._output_layer = PygameOutputWriter()
         # self._output_layer = ConsoleOutputWriter()
@@ -30,35 +30,6 @@ class LayerCoordinator:
         self._input_layer.cleanup()
         self._output_layer.cleanup()
         
-    def _get_plateau_size(self) -> ProgramState:
-        plateau_size = self._input_layer.get_plateau_size()
-        self._plateau.set_dimensions(plateau_size)
-        return ProgramState.GET_ROVER_START
-
-    def _get_rover_start(self) -> ProgramState:
-        rover_start = self._input_layer.get_next_rover_start()
-        if rover_start is None:
-            return ProgramState.EXIT
-        
-        try: 
-            self._plateau.add_rover(rover_start)
-        except Exception as e:
-            self._input_layer.logic_error_raised(e)
-            
-        return ProgramState.GET_ROVER_INSTRUCTION
-
-    def _get_rover_instruction(self) -> ProgramState:
-        instruction = self._input_layer.get_next_rover_instruction()
-        if instruction is None:
-            return ProgramState.GET_ROVER_START
-        
-        try:
-            self._plateau.move_rover(instruction)
-        except Exception as e:
-            self._input_layer.logic_error_raised(e)
-            
-        return ProgramState.GET_ROVER_INSTRUCTION
-    
     def _get_next_instruction(self, expected_instruction_type: InstructionType) -> ProgramState:
         instruction = self._input_layer.get_next_instruction(expected_instruction_type)
         try:

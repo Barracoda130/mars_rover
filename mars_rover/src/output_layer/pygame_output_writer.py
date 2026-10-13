@@ -3,18 +3,13 @@
 from mars_rover.src.common.button_data import ButtonData, ButtonType
 from mars_rover.src.common.enums import CompassDirection
 from mars_rover.src.common.size import PlateauSize
-from mars_rover.src.output_layer.button import Button, TextInput
+from mars_rover.src.output_layer.pygame_objects.button import Button
+from mars_rover.src.output_layer.pygame_objects.text_input import TextInput
 from mars_rover.src.output_layer.output_data import OutputData
 from mars_rover.src.output_layer.output_writer import OutputWriter
 from mars_rover.src.common.exceptions import MarsRoverException
 import pygame
 
-def ensure_pygame_initialized(func):
-    def wrapper(self, *args, **kwargs):
-        if not pygame.get_init() or self._canvas is None:
-            raise MarsRoverException("Pygame must be initialized before calling this method.")
-        return func(self, *args, **kwargs)
-    return wrapper
 
 class PygameOutputWriter(OutputWriter):
     _ROVER_ROTATION_ANGLES = {
@@ -43,11 +38,17 @@ class PygameOutputWriter(OutputWriter):
         )
         self._plateau_size_error = ""
         
+        
     def setup(self) -> None:
         pygame.init()
         self._canvas = pygame.display.set_mode((self._SCREEN_WIDTH, self._SCREEN_HEIGHT))
         pygame.display.set_caption("Mars Rover Simulation")
-        
+
+    def get_canvas(self) -> pygame.Surface:
+        if self._canvas is None:
+            raise MarsRoverException("Pygame must be initialized before calling this method.")
+        return self._canvas
+
     def _create_plateau_button_clicked(self, click_position: tuple[int, int]) -> ButtonData:
         if self._CREATE_PLATEAU_BUTTON.is_clicked(click_position):
             dimensions = self._plateau_size_input.text.split()
@@ -84,30 +85,42 @@ class PygameOutputWriter(OutputWriter):
         
         return self._plateau_grid_clicked(click_position)
     
-    @ensure_pygame_initialized
     def _write_create_plateau_screen(self) -> None:
-        self._canvas.fill("white")
+        canvas = self.get_canvas()
+        canvas.fill("white")
         font = pygame.font.Font(None, 32)
+        
         label = font.render("Plateau size (width height):", True, "black")
         label_rect = label.get_rect(centerx=self._SCREEN_WIDTH // 2, bottom=self._plateau_size_input.rect.top - 10)
-        self._canvas.blit(label, label_rect)
-        self._plateau_size_input.draw(self._canvas)
-        self._CREATE_PLATEAU_BUTTON.draw(self._canvas)
+        canvas.blit(label, label_rect)
+        
+        self._plateau_size_input.draw(canvas)
+        self._CREATE_PLATEAU_BUTTON.draw(canvas)
+        for event in pygame.event.get():
+            self._plateau_size_input.handle_event(event)
+            self._CREATE_PLATEAU_BUTTON.handle_event(event)
+            
         if self._plateau_size_error:
             error_font = pygame.font.Font(None, 24)
             error = error_font.render(self._plateau_size_error, True, "red")
             error_rect = error.get_rect(centerx=self._SCREEN_WIDTH // 2, top=self._CREATE_PLATEAU_BUTTON.y + 65)
-            self._canvas.blit(error, error_rect)
+            canvas.blit(error, error_rect)
+            
         pygame.display.update()
     
-    @ensure_pygame_initialized
+
     def write(self, data: OutputData):
         
-        self._canvas.fill("white")
+        canvas = self.get_canvas()
+        canvas.fill("white")
         
         if data.plateau_size.width <= 0 or data.plateau_size.height <= 0:
             self._write_create_plateau_screen()
-            return
+        else:
+            self._write_plateau_grid(data)
+        
+    def _write_plateau_grid(self, data: OutputData) -> None:
+        canvas = self.get_canvas()
         
         top_start = 50
         left_start = 50
@@ -119,9 +132,9 @@ class PygameOutputWriter(OutputWriter):
         
         # if self._previous_output_data.plateau_size != data.plateau_size:
         for i in range(data.plateau_size.height + 1):
-            pygame.draw.line(self._canvas, "black", (left_start, top_start + i * square_size), (left_start + data.plateau_size.width * square_size, top_start + i * square_size))
+            pygame.draw.line(canvas, "black", (left_start, top_start + i * square_size), (left_start + data.plateau_size.width * square_size, top_start + i * square_size))
         for i in range(data.plateau_size.width + 1):
-            pygame.draw.line(self._canvas, "black", (left_start + i * square_size, top_start), (left_start + i * square_size, top_start + data.plateau_size.height * square_size))
+            pygame.draw.line(canvas, "black", (left_start + i * square_size, top_start), (left_start + i * square_size, top_start + data.plateau_size.height * square_size))
         
         # if self._previous_output_data.rovers != data.rovers:
         rover_img = pygame.image.load("data/rover.png")
@@ -130,7 +143,7 @@ class PygameOutputWriter(OutputWriter):
             rover_x = left_start + (rover.position.x - 1) * square_size
             rover_y = top_start + (data.plateau_size.height - rover.position.y) * square_size
             rover_rotated = pygame.transform.rotate(rover_scaled, self._ROVER_ROTATION_ANGLES[rover.direction])
-            self._canvas.blit(rover_rotated, (rover_x, rover_y))
+            canvas.blit(rover_rotated, (rover_x, rover_y))
             
         self._previous_output_data = data
         pygame.display.update()
