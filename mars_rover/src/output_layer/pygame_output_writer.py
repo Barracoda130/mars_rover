@@ -2,6 +2,7 @@
 
 from mars_rover.src.common.button_data import ButtonData, ButtonType
 from mars_rover.src.common.enums import CompassDirection
+from mars_rover.src.common.position import Position
 from mars_rover.src.common.size import PlateauSize
 from mars_rover.src.output_layer.pygame_objects.button import Button
 from mars_rover.src.output_layer.pygame_objects.text_input import TextInput
@@ -81,7 +82,8 @@ class PygameOutputWriter(OutputWriter):
 
     def button_click_callback(self, click_position: tuple[int, int]) -> ButtonData:
         if self._previous_output_data.plateau_size.width <= 0 or self._previous_output_data.plateau_size.height <= 0:
-            return self._create_plateau_button_clicked(click_position)
+            if self._CREATE_PLATEAU_BUTTON.is_clicked(click_position):
+                return ButtonData(ButtonType.PLATEAU_SIZE, Position(1, 1))
         
         return self._plateau_grid_clicked(click_position)
     
@@ -96,10 +98,11 @@ class PygameOutputWriter(OutputWriter):
         
         self._plateau_size_input.draw(canvas)
         self._CREATE_PLATEAU_BUTTON.draw(canvas)
+
         for event in pygame.event.get():
             self._plateau_size_input.handle_event(event)
             self._CREATE_PLATEAU_BUTTON.handle_event(event)
-            
+
         if self._plateau_size_error:
             error_font = pygame.font.Font(None, 24)
             error = error_font.render(self._plateau_size_error, True, "red")
@@ -112,7 +115,7 @@ class PygameOutputWriter(OutputWriter):
     def write(self, data: OutputData):
         
         canvas = self.get_canvas()
-        canvas.fill("white")
+        canvas.fill("grey51")
         
         if data.plateau_size.width <= 0 or data.plateau_size.height <= 0:
             self._write_create_plateau_screen()

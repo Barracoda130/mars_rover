@@ -1,11 +1,15 @@
 
 
+from enum import Enum, auto
 from typing import override
 
 import pygame
 
 from mars_rover.src.output_layer.pygame_objects.object import PygameObject
 
+class ButtonType(Enum):
+    PLATEAU_SIZE = auto()
+    NEW_ROVER = auto()
 
 class Button(PygameObject):
     def __init__(self, x: int, y: int, width: int, height: int, label: str):
